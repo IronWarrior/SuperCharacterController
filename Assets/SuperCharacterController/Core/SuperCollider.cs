@@ -68,21 +68,34 @@ public static class SuperCollider {
         // Now, shift it to be in the center of the box
         local -= collider.center;
 
+        //Pre multiply to save operations.
+        var halfSize = collider.size * 0.5f;
+
         // Clamp the points to the collider's extents
-        var localNorm =
-            new Vector3(
-                Mathf.Clamp(local.x, -collider.size.x * 0.5f, collider.size.x * 0.5f),
-                Mathf.Clamp(local.y, -collider.size.y * 0.5f, collider.size.y * 0.5f),
-                Mathf.Clamp(local.z, -collider.size.z * 0.5f, collider.size.z * 0.5f)
+        var localNorm = new Vector3(
+                Mathf.Clamp(local.x, -halfSize.x, halfSize.x),
+                Mathf.Clamp(local.y, -halfSize.y, halfSize.y),
+                Mathf.Clamp(local.z, -halfSize.z, halfSize.z)
             );
 
+        //Calculate distances from each edge
+        var dx = Mathf.Min(Mathf.Abs(halfSize.x - localNorm.x), Mathf.Abs(-halfSize.x - localNorm.x));
+        var dy = Mathf.Min(Mathf.Abs(halfSize.y - localNorm.y), Mathf.Abs(-halfSize.y - localNorm.y));
+        var dz = Mathf.Min(Mathf.Abs(halfSize.z - localNorm.z), Mathf.Abs(-halfSize.z - localNorm.z));
+
         // Select a face to project on
-        if (Mathf.Abs(localNorm.x) > Mathf.Abs(localNorm.y) && Mathf.Abs(localNorm.x) > Mathf.Abs(localNorm.z))
-            localNorm.x = Mathf.Sign(localNorm.x) * collider.size.x * 0.5f;
-        else if (Mathf.Abs(localNorm.y) > Mathf.Abs(localNorm.x) && Mathf.Abs(localNorm.y) > Mathf.Abs(localNorm.z))
-            localNorm.y = Mathf.Sign(localNorm.y) * collider.size.y * 0.5f;
-        else if (Mathf.Abs(localNorm.z) > Mathf.Abs(localNorm.x) && Mathf.Abs(localNorm.z) > Mathf.Abs(localNorm.y))
-            localNorm.z = Mathf.Sign(localNorm.z) * collider.size.z * 0.5f;
+        if (dx < dy && dx < dz)
+        {
+            localNorm.x = Mathf.Sign(localNorm.x) * halfSize.x;
+        }
+        else if (dy < dx && dy < dz)
+        {
+            localNorm.y = Mathf.Sign(localNorm.y) * halfSize.y;
+        }
+        else if (dz < dx && dz < dy)
+        {
+            localNorm.z = Mathf.Sign(localNorm.z) * halfSize.z;
+        }
 
         // Now we undo our transformations
         localNorm += collider.center;
