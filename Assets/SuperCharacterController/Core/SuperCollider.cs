@@ -52,11 +52,13 @@ public static class SuperCollider {
     {
         Vector3 p;
 
-        p = to - collider.transform.position;
+        //Need to take center property into account
+        var centerPosition = collider.transform.position + collider.center;
+        p = to - centerPosition;
         p.Normalize();
 
         p *= collider.radius * collider.transform.localScale.x;
-        p += collider.transform.position;
+        p += centerPosition;
 
         return p;
     }
