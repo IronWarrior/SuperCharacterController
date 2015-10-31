@@ -169,8 +169,8 @@ public class CustomController : MonoBehaviour
 			
 			Vector3 awayFromCenter = Quaternion.AngleAxis(-80.0f, Vector3.Cross(toCenter, transform.up)) * -toCenter; // Get a vector pointing towards the center of the controller
 			
-			Vector3 nearPoint = hit.point + toCenter + (transform.up * _tinyTolerance); // Calculate a position close to the center of the controller to raycast from to get info about nearground
-			Vector3 farPoint = hit.point + (awayFromCenter * 3); // Calculate a position further to the center of the controller to raycast from to get info about the farground
+			Vector3 nearPoint = hit.point + toCenter*8 + (transform.up * _tinyTolerance); // Calculate a position close to the center of the controller to raycast from to get info about nearground
+			Vector3 farPoint = hit.point + (awayFromCenter * 8); // Calculate a position further to the center of the controller to raycast from to get info about the farground
 			
 			RaycastHit nearHit; //Properties of the nearHit ground
 			RaycastHit farHit; //Properties of the farHit ground
@@ -354,16 +354,16 @@ public class CustomController : MonoBehaviour
 			
 			return false;
 		}
-		
-		// Check if we are at the edge of an edge and the controller is within the limits of standing off the far ground
-		if (_farGround.isValid && !OnSteadyGround(_farGround.normal,_currentGround.point))
-		{
-			//Before setting the controller to not grounded check if the controller is within the limits of standing off the near ground
-			if (_nearGround.isValid && OnSteadyGround(_nearGround.normal, _currentGround.point))
-				return true;
-			
-			return false;
-		}
+
+        // Check if we are at the edge of an edge and the controller is within the limits of standing off the far ground
+        if (_farGround.isValid && !OnSteadyGround(_farGround.normal, _currentGround.point))
+        {
+            //Before setting the controller to not grounded check if the controller is within the limits of standing off the near ground
+            if (_nearGround.isValid && _nearGround.distance <= distance)
+                return true;
+
+            return false;
+        }
 		
 		return true;
 	}
