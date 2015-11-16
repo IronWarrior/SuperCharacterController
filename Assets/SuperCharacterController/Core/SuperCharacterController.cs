@@ -303,45 +303,6 @@ public class SuperCharacterController : MonoBehaviour
     }
 
     /// <summary>
-    /// Provides raycast data based on where a SphereCast would contact the specified normal
-    /// Raycasting downwards from a point along the controller's bottom sphere, based on the provided
-    /// normal
-    /// </summary>
-    /// <param name="groundNormal">Normal of a triangle assumed to be directly below the controller</param>
-    /// <param name="hit">Simulated SphereCast data</param>
-    /// <returns>True if the raycast is successful</returns>
-    private bool SimulateSphereCast(Vector3 groundNormal, out RaycastHit hit)
-    {
-        float groundAngle = Vector3.Angle(groundNormal, up) * Mathf.Deg2Rad;
-
-        Vector3 secondaryOrigin = transform.position + up * Tolerance;
-
-        if (!Mathf.Approximately(groundAngle, 0))
-        {
-            float horizontal = Mathf.Sin(groundAngle) * radius;
-            float vertical = (1.0f - Mathf.Cos(groundAngle)) * radius;
-
-            // Retrieve a vector pointing up the slope
-            Vector3 r2 = Vector3.Cross(groundNormal, down);
-            Vector3 v2 = -Vector3.Cross(r2, groundNormal);
-
-            secondaryOrigin += Math3d.ProjectVectorOnPlane(up, v2).normalized * horizontal + up * vertical;
-        }
-
-        if (Physics.Raycast(secondaryOrigin, down, out hit, Mathf.Infinity, Walkable))
-        {
-            // Remove the tolerance from the distance travelled
-            hit.distance -= Tolerance;
-
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    /// <summary>
     /// Check if any of the CollisionSpheres are colliding with any walkable objects in the world.
     /// If they are, apply a proper pushback and retrieve the collision data
     /// </summary>
@@ -864,6 +825,14 @@ public class SuperCharacterController : MonoBehaviour
             }
         }
 
+        /// <summary>
+        /// Provides raycast data based on where a SphereCast would contact the specified normal
+        /// Raycasting downwards from a point along the controller's bottom sphere, based on the provided
+        /// normal
+        /// </summary>
+        /// <param name="groundNormal">Normal of a triangle assumed to be directly below the controller</param>
+        /// <param name="hit">Simulated SphereCast data</param>
+        /// <returns>True if the raycast is successful</returns>
         private bool SimulateSphereCast(Vector3 groundNormal, out RaycastHit hit)
         {
             float groundAngle = Vector3.Angle(groundNormal, controller.up) * Mathf.Deg2Rad;
@@ -882,7 +851,7 @@ public class SuperCharacterController : MonoBehaviour
                 secondaryOrigin += Math3d.ProjectVectorOnPlane(controller.up, v2).normalized * horizontal + controller.up * vertical;
             }
 
-            if (Physics.Raycast(secondaryOrigin, controller.down, out hit, Mathf.Infinity, walkable))
+            if (Physics.SphereCast(secondaryOrigin, TinyTolerance, controller.down, out hit, Mathf.Infinity, walkable))
             {
                 // Remove the tolerance from the distance travelled
                 hit.distance -= Tolerance;
