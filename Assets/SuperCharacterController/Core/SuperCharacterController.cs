@@ -666,6 +666,9 @@ public class SuperCharacterController : MonoBehaviour
                 superCollisionType = superColType;
                 transform = hit.transform;
 
+                //Comprensate for radius that is normally present in SphereCast.
+                hit.distance -= controller.radius;
+
                 RaycastHit sphereCastHit;
 
                 if (SimulateSphereCast(hit.normal, out sphereCastHit))

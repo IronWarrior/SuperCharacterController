@@ -40,6 +40,10 @@ public static class SuperCollider {
                 return bfm.ClosestPointOn(to);
             }
         }
+        else if (collider is TerrainCollider)
+        {
+            return SuperCollider.ClosestPointOnSurface((TerrainCollider)collider, to);
+        }
 
         return Vector3.zero;
     }
@@ -48,11 +52,13 @@ public static class SuperCollider {
     {
         Vector3 p;
 
-        p = to - collider.transform.position;
+        //Need to take center property into account
+        var centerPosition = collider.transform.position + collider.center;
+        p = to - centerPosition;
         p.Normalize();
 
         p *= collider.radius * collider.transform.localScale.x;
-        p += collider.transform.position;
+        p += centerPosition;
 
         return p;
     }
@@ -133,5 +139,101 @@ public static class SuperCollider {
         p = p * collider.radius + pt;
         return ct.TransformPoint(p);
 
+    }
+
+    public static Vector3 ClosestPointOnSurface(TerrainCollider collider, Vector3 to, bool fast = true)
+    {
+        Vector3 result = to;
+
+        //Get the terrain data
+        var terrainData = collider.terrainData;
+        if (terrainData != null)
+        {
+            // Cache the collider transform
+            var ct = collider.transform;
+
+            // Firstly, transform the point into the space of the collider
+            var local = ct.InverseTransformPoint(to);
+
+            //Where are we positioned on the terrain
+            var percentZ = Mathf.Clamp01(local.z / terrainData.size.z);
+            var percentX = Mathf.Clamp01(local.x / terrainData.size.x);
+
+            Vector3 localNorm;
+            if (fast)
+            {
+                //Cheap way the assumes the closest point is straight up (Works for most cases):
+
+                //Flip X and Z for this method
+                var height = terrainData.GetInterpolatedHeight(percentX, percentZ);
+
+                localNorm = new Vector3(local.x, height, local.z);
+            }
+            else
+            {
+                //Find closest point on heightmap triangle (Better for when terrain is very steep and the collider has penetrated a large amount):
+
+                //What is our heightmap position
+                var heightmapZ = percentZ * terrainData.heightmapResolution;
+                var heightmapX = percentX * terrainData.heightmapResolution;
+
+                //When we do our triangle checking how far is one heightmap sample
+                var offsetZ = (1.0f / terrainData.size.z) * terrainData.heightmapResolution;
+                var offsetX = (1.0f / terrainData.size.x) * terrainData.heightmapResolution;
+
+                //Get the heights for our corners
+                var heights = terrainData.GetHeights(Mathf.FloorToInt(heightmapZ), Mathf.FloorToInt(heightmapX), 2, 2);
+
+                //Find corner for the appropriate triangle.
+                Vector3 firstCorner, secondCorner, thirdCorner;
+                if (heightmapZ % 1.0f < 0.5f)
+                {
+                    firstCorner = new Vector3(local.x, heights[0, 0], local.z);
+                    secondCorner = new Vector3(local.x + offsetX, heights[0, 1], local.z);
+
+                    if (heightmapX % 1.0f < 0.5f)
+                    {
+                        thirdCorner = new Vector3(local.x, heights[1, 0], local.z + offsetZ);
+                    }
+                    else
+                    {
+                        thirdCorner = new Vector3(local.x + offsetX, heights[1, 1], local.z + offsetZ);
+                    }
+                }
+                else
+                {
+                    firstCorner = new Vector3(local.x, heights[1, 0], local.z + offsetZ);
+                    secondCorner = new Vector3(local.x + offsetX, heights[1, 1], local.z + offsetZ);
+
+                    if (heightmapX % 1.0f < 0.5f)
+                    {
+                        thirdCorner = new Vector3(local.x, heights[0, 0], local.z);
+                    }
+                    else
+                    {
+                        thirdCorner = new Vector3(local.x + offsetX, heights[0, 1], local.z);
+                    }
+                }
+
+                //Find normal for our triangle
+                var normal = Vector3.Cross(firstCorner - thirdCorner, secondCorner - thirdCorner).normalized;
+                normal.y = Mathf.Abs(normal.y);
+                Debug.DrawLine(to, to + normal, Color.red);
+
+                //Find distance from triangle
+                var distance = Vector3.Dot(normal, local);
+
+                Debug.Log("Normal: " + normal + " Distance: " + distance);
+
+                //Multiply by our normal to get on the surface and then transform back.
+                localNorm = local - (normal * distance);
+            }
+
+            //Transform back.
+            result = ct.TransformPoint(localNorm);
+        }
+
+        //Return resulting point
+        return result;
     }
 }
