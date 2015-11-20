@@ -40,6 +40,10 @@ public static class SuperCollider {
                 return bfm.ClosestPointOn(to);
             }
         }
+        else if (collider is TerrainCollider)
+        {
+            return SuperCollider.ClosestPointOnSurface((TerrainCollider)collider, to, radius, false);
+        }
 
         return Vector3.zero;
     }
@@ -133,5 +137,133 @@ public static class SuperCollider {
         p = p * collider.radius + pt;
         return ct.TransformPoint(p);
 
+    }
+
+    public static Vector3 ClosestPointOnSurface(TerrainCollider collider, Vector3 to, float radius, bool debug=false)
+    {
+        var terrainData = collider.terrainData;
+
+        var local = collider.transform.InverseTransformPoint(to);
+
+        // Calculate the size of each tile on the terrain horizontally and vertically
+        float pixelSizeX = terrainData.size.x / (terrainData.heightmapResolution - 1);
+        float pixelSizeZ = terrainData.size.z / (terrainData.heightmapResolution - 1);
+
+        var percentZ = Mathf.Clamp01(local.z / terrainData.size.z);
+        var percentX = Mathf.Clamp01(local.x / terrainData.size.x);
+
+        float positionX = percentX * (terrainData.heightmapResolution - 1);
+        float positionZ = percentZ * (terrainData.heightmapResolution - 1);
+
+        // Calculate our position, in tiles, on the terrain
+        int pixelX = Mathf.FloorToInt(positionX);
+        int pixelZ = Mathf.FloorToInt(positionZ);
+
+        // Calculate the distance from our point to the edge of the tile we are in
+        float distanceX = (positionX - pixelX) * pixelSizeX;
+        float distanceZ = (positionZ - pixelZ) * pixelSizeZ;
+
+        // Find out how many tiles we are overlapping on the X plane
+        float radiusExtentsLeftX = radius - distanceX;
+        float radiusExtentsRightX = radius - (pixelSizeX - distanceX);
+
+        int overlappedTilesXLeft = radiusExtentsLeftX > 0 ? Mathf.FloorToInt(radiusExtentsLeftX / pixelSizeX) + 1 : 0;
+        int overlappedTilesXRight = radiusExtentsRightX > 0 ? Mathf.FloorToInt(radiusExtentsRightX / pixelSizeX) + 1 : 0;
+
+        // Find out how many tiles we are overlapping on the Z plane
+        float radiusExtentsLeftZ = radius - distanceZ;
+        float radiusExtentsRightZ = radius - (pixelSizeZ - distanceZ);
+
+        int overlappedTilesZLeft = radiusExtentsLeftZ > 0 ? Mathf.FloorToInt(radiusExtentsLeftZ / pixelSizeZ) + 1 : 0;
+        int overlappedTilesZRight = radiusExtentsRightZ > 0 ? Mathf.FloorToInt(radiusExtentsRightZ / pixelSizeZ) + 1 : 0;
+
+        // Retrieve the heights of the pixels we are testing against
+        int startPositionX = pixelX - overlappedTilesXLeft;
+        int startPositionZ = pixelZ - overlappedTilesZLeft;
+
+        int numberOfXPixels = overlappedTilesXRight + overlappedTilesXLeft + 1;
+        int numberOfZPixels = overlappedTilesZRight + overlappedTilesZLeft + 1;
+
+        // Account for if we are off the terrain
+        if (startPositionX < 0)
+        {
+            numberOfXPixels -= Mathf.Abs(startPositionX);
+            startPositionX = 0;
+        }
+
+        if (startPositionZ < 0)
+        {
+            numberOfZPixels -= Mathf.Abs(startPositionZ);
+            startPositionZ = 0;
+        }
+
+        if (startPositionX + numberOfXPixels + 1 > terrainData.heightmapResolution)
+        {
+            numberOfXPixels = terrainData.heightmapResolution - startPositionX - 1;
+        }
+
+        if (startPositionZ + numberOfZPixels + 1 > terrainData.heightmapResolution)
+        {
+            numberOfZPixels = terrainData.heightmapResolution - startPositionZ - 1;
+        }
+
+        // Retrieve the heights of the tile we are in and all overlapped tiles
+        var heights = terrainData.GetHeights(startPositionX, startPositionZ, numberOfXPixels + 1, numberOfZPixels + 1);
+
+        // Pre-scale the heights data to be world-scale instead of 0...1
+        for (int i = 0; i < numberOfXPixels + 1; i++)
+        {
+            for (int j = 0; j < numberOfZPixels + 1; j++)
+            {
+                heights[j, i] *= terrainData.size.y;
+            }
+        }
+
+        // Find the shortest distance to any triangle in the set gathered
+        float shortestDistance = float.MaxValue;
+
+        Vector3 shortestPoint = Vector3.zero;
+
+        for (int x = 0; x < numberOfXPixels; x++)
+        {
+            for (int z = 0; z < numberOfZPixels; z++)
+            {
+                // Build the set of points that creates the two triangles that form this tile
+                Vector3 a = new Vector3((startPositionX + x) * pixelSizeX, heights[z, x], (startPositionZ + z) * pixelSizeZ);
+                Vector3 b = new Vector3((startPositionX + x + 1) * pixelSizeX, heights[z, x + 1], (startPositionZ + z) * pixelSizeZ);
+                Vector3 c = new Vector3((startPositionX + x) * pixelSizeX, heights[z + 1, x], (startPositionZ + z + 1) * pixelSizeZ);
+                Vector3 d = new Vector3((startPositionX + x + 1) * pixelSizeX, heights[z + 1, x + 1], (startPositionZ + z + 1) * pixelSizeZ);
+
+                Vector3 nearest;
+
+                BSPTree.ClosestPointOnTriangleToPoint(ref a, ref d, ref c, ref local, out nearest);
+
+                float distance = (local - nearest).sqrMagnitude;
+
+                if (distance <= shortestDistance)
+                {
+                    shortestDistance = distance;
+                    shortestPoint = nearest;
+                }
+
+                BSPTree.ClosestPointOnTriangleToPoint(ref a, ref b, ref d, ref local, out nearest);
+
+                distance = (local - nearest).sqrMagnitude;
+
+                if (distance <= shortestDistance)
+                {
+                    shortestDistance = distance;
+                    shortestPoint = nearest;
+                }
+
+                if (debug)
+                {
+                    DebugDraw.DrawTriangle(a, d, c, Color.cyan);
+                    DebugDraw.DrawTriangle(a, b, d, Color.red);
+                }
+            }
+        }
+
+        return collider.transform.TransformPoint(shortestPoint);
     }
 }

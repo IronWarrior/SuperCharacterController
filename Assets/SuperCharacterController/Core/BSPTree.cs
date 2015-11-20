@@ -295,7 +295,7 @@ public class BSPTree : MonoBehaviour {
     /// <param name="vertex2">The second vertex to test.</param>
     /// <param name="vertex3">The third vertex to test.</param>
     /// <param name="result">When the method completes, contains the closest point between the two objects.</param>
-    void ClosestPointOnTriangleToPoint(ref Vector3 vertex1, ref Vector3 vertex2, ref Vector3 vertex3, ref Vector3 point, out Vector3 result)
+    public static void ClosestPointOnTriangleToPoint(ref Vector3 vertex1, ref Vector3 vertex2, ref Vector3 vertex3, ref Vector3 point, out Vector3 result)
     {
         //Source: Real-Time Collision Detection by Christer Ericson
         //Reference: Page 136
