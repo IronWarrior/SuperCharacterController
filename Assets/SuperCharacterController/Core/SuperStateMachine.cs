@@ -1,10 +1,12 @@
 ﻿// With a little help from UnityGems
-
 using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 
+/// <summary>
+/// State machine model that recieves SuperUpdate messages from the SuperCharacterController
+/// </summary>
 public class SuperStateMachine : MonoBehaviour {
 
     protected float timeEnteredState;
@@ -46,6 +48,10 @@ public class SuperStateMachine : MonoBehaviour {
         timeEnteredState = Time.time;
     }
 
+    /// <summary>
+    /// Runs the exit method for the previous state. Updates all method delegates to the new
+    /// state, and then runs the enter method for the new state.
+    /// </summary>
     void ConfigureCurrentState()
     {
         if (state.exitState != null)
@@ -66,6 +72,13 @@ public class SuperStateMachine : MonoBehaviour {
 
     Dictionary<Enum, Dictionary<string, Delegate>> _cache = new Dictionary<Enum, Dictionary<string, Delegate>>();
 
+    /// <summary>
+    /// Retrieves the specific state method for the provided method root.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="methodRoot">Based method name that is appended to the state name by an underscore, in the form of X_methodRoot where X is a state name</param>
+    /// <param name="Default"></param>
+    /// <returns>The state specific method as a delegate or Default if it does not exist</returns>
     T ConfigureDelegate<T>(string methodRoot, T Default) where T : class
     {
 
@@ -94,6 +107,9 @@ public class SuperStateMachine : MonoBehaviour {
 
     }
 
+    /// <summary>
+    /// Message callback from the SuperCharacterController that runs the state specific update between global updates
+    /// </summary>
     void SuperUpdate()
     {
         EarlyGlobalSuperUpdate();
