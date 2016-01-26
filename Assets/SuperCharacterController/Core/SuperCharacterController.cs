@@ -206,6 +206,8 @@ public class SuperCharacterController : MonoBehaviour
 
         ProbeGround(3);
 
+        gameObject.SendMessage("OnBeforeClamp", SendMessageOptions.DontRequireReceiver);
+
         if (clamping)
             ClampToGround();
 
@@ -525,8 +527,8 @@ public class SuperCharacterController : MonoBehaviour
         public Transform transform { get; private set; }
 
         private const float groundingUpperBoundAngle = 60.0f;
-        private const float groundingMaxPercentFromCenter = 0.85f;
-        private const float groundingMinPercentFromcenter = 0.50f;
+        private const float groundingMaxPercentFromCenter = 1.0f;
+        private const float groundingMinPercentFromCenter = 1.0f;
 
         /// <summary>
         /// Scan the surface below us for ground. Follow up the initial scan with subsequent scans
@@ -739,7 +741,6 @@ public class SuperCharacterController : MonoBehaviour
                 return false;
             }
 
-
             if (farGround != null)
             {
                 groundNormal = farGround.normal;
@@ -766,7 +767,7 @@ public class SuperCharacterController : MonoBehaviour
 
             float angleRatio = angle / groundingUpperBoundAngle;
 
-            float distanceRatio = Mathf.Lerp(groundingMinPercentFromcenter, groundingMaxPercentFromCenter, angleRatio);
+            float distanceRatio = Mathf.Lerp(groundingMinPercentFromCenter, groundingMaxPercentFromCenter, angleRatio);
 
             Vector3 p = Math3d.ProjectPointOnPlane(controller.up, controller.transform.position, point);
 

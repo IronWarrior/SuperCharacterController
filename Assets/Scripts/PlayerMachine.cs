@@ -57,7 +57,7 @@ public class PlayerMachine : SuperStateMachine {
         // This is run regardless of what state you're in
 
         // Move the player by our velocity every frame
-        transform.position += moveDirection * Time.deltaTime;
+        transform.position += moveDirection * controller.deltaTime;
 
         // Rotate our mesh to face where we are "looking"
         AnimatedMesh.rotation = Quaternion.LookRotation(lookDirection, controller.up);
@@ -107,6 +107,19 @@ public class PlayerMachine : SuperStateMachine {
         return Mathf.Sqrt(2 * jumpHeight * gravity);
     }
 
+    // Message sent out just before the controller is clamped to the ground
+    private void OnBeforeClamp()
+    {
+        if ((PlayerStates)currentState == PlayerStates.Idle || (PlayerStates)currentState == PlayerStates.Walk)
+        {
+            if (!MaintainingGround())
+            {
+                currentState = PlayerStates.Fall;
+                return;
+            }
+        }
+    }
+
 	/*void Update () {
 	 * Update is normally run once on every frame update. We won't be using it
      * in this case, since the SuperCharacterController component sends a callback Update 
@@ -146,7 +159,7 @@ public class PlayerMachine : SuperStateMachine {
         }
 
         // Apply friction to slow us to a halt
-        moveDirection = Vector3.MoveTowards(moveDirection, Vector3.zero, 10.0f * Time.deltaTime);
+        moveDirection = Vector3.MoveTowards(moveDirection, Vector3.zero, 10.0f * controller.deltaTime);
     }
 
     void Idle_ExitState()
@@ -170,7 +183,7 @@ public class PlayerMachine : SuperStateMachine {
 
         if (input.Current.MoveInput != Vector3.zero)
         {
-            moveDirection = Vector3.MoveTowards(moveDirection, LocalMovement() * WalkSpeed, WalkAcceleration * Time.deltaTime);
+            moveDirection = Vector3.MoveTowards(moveDirection, LocalMovement() * WalkSpeed, WalkAcceleration * controller.deltaTime);
         }
         else
         {
@@ -199,8 +212,8 @@ public class PlayerMachine : SuperStateMachine {
             return;            
         }
 
-        planarMoveDirection = Vector3.MoveTowards(planarMoveDirection, LocalMovement() * WalkSpeed, JumpAcceleration * Time.deltaTime);
-        verticalMoveDirection -= controller.up * Gravity * Time.deltaTime;
+        planarMoveDirection = Vector3.MoveTowards(planarMoveDirection, LocalMovement() * WalkSpeed, JumpAcceleration * controller.deltaTime);
+        verticalMoveDirection -= controller.up * Gravity * controller.deltaTime;
 
         moveDirection = planarMoveDirection + verticalMoveDirection;
     }
@@ -222,6 +235,6 @@ public class PlayerMachine : SuperStateMachine {
             return;
         }
 
-        moveDirection -= controller.up * Gravity * Time.deltaTime;
+        moveDirection -= controller.up * Gravity * controller.deltaTime;
     }
 }
