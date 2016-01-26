@@ -197,6 +197,8 @@ public class SuperCharacterController : MonoBehaviour
 
         gameObject.SendMessage("SuperUpdate", SendMessageOptions.DontRequireReceiver);
 
+        collisionData.Clear();
+
         RecursivePushback(0, MaxPushbackIterations);
 
         ProbeGround(2);
@@ -309,8 +311,6 @@ public class SuperCharacterController : MonoBehaviour
     void RecursivePushback(int depth, int maxDepth)
     {
         PushIgnoredColliders();
-
-        collisionData.Clear();
 
         bool contact = false;
 
