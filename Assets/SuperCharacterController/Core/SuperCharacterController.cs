@@ -86,6 +86,10 @@ public class SuperCharacterController : MonoBehaviour
     public Transform currentlyClampedTo { get; set; }
     public float heightScale { get; set; }
     public float radiusScale { get; set; }
+    public bool manualUpdateOnly { get; set; }
+
+    public delegate void UpdateDelegate();
+    public event UpdateDelegate AfterSingleUpdate;
 
     private Vector3 initialPosition;
     private Vector3 groundOffset;
@@ -143,13 +147,17 @@ public class SuperCharacterController : MonoBehaviour
 
         currentGround = new SuperGround(Walkable, this);
 
-		gameObject.SendMessage("SuperStart", SendMessageOptions.DontRequireReceiver);
+        manualUpdateOnly = false;
+
+        gameObject.SendMessage("SuperStart", SendMessageOptions.DontRequireReceiver);
     }
 
     void Update()
     {
         // If we are using a fixed timestep, ensure we run the main update loop
         // a sufficient number of times based on the Time.deltaTime
+        if (manualUpdateOnly)
+            return;
 
         if (!fixedTimeStep)
         {
@@ -178,6 +186,13 @@ public class SuperCharacterController : MonoBehaviour
                 SingleUpdate();
             }
         }
+    }
+
+    public void ManualUpdate(float deltaTime)
+    {
+        this.deltaTime = deltaTime;
+
+        SingleUpdate();
     }
 
     void SingleUpdate()
@@ -220,6 +235,8 @@ public class SuperCharacterController : MonoBehaviour
         if (debugGrounding)
             currentGround.DebugGround(true, true, true, true, true);
 
+        if (AfterSingleUpdate != null)
+            AfterSingleUpdate();
     }
 
     void ProbeGround(int iter)
