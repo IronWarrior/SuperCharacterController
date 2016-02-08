@@ -57,7 +57,7 @@ public class PlayerMachine : SuperStateMachine {
         // This is run regardless of what state you're in
 
         // Move the player by our velocity every frame
-        transform.position += moveDirection * Time.deltaTime;
+        transform.position += moveDirection * controller.deltaTime;
 
         // Rotate our mesh to face where we are "looking"
         AnimatedMesh.rotation = Quaternion.LookRotation(lookDirection, controller.up);
@@ -146,7 +146,7 @@ public class PlayerMachine : SuperStateMachine {
         }
 
         // Apply friction to slow us to a halt
-        moveDirection = Vector3.MoveTowards(moveDirection, Vector3.zero, 10.0f * Time.deltaTime);
+        moveDirection = Vector3.MoveTowards(moveDirection, Vector3.zero, 10.0f * controller.deltaTime);
     }
 
     void Idle_ExitState()
@@ -170,7 +170,7 @@ public class PlayerMachine : SuperStateMachine {
 
         if (input.Current.MoveInput != Vector3.zero)
         {
-            moveDirection = Vector3.MoveTowards(moveDirection, LocalMovement() * WalkSpeed, WalkAcceleration * Time.deltaTime);
+            moveDirection = Vector3.MoveTowards(moveDirection, LocalMovement() * WalkSpeed, WalkAcceleration * controller.deltaTime);
         }
         else
         {
@@ -199,8 +199,8 @@ public class PlayerMachine : SuperStateMachine {
             return;            
         }
 
-        planarMoveDirection = Vector3.MoveTowards(planarMoveDirection, LocalMovement() * WalkSpeed, JumpAcceleration * Time.deltaTime);
-        verticalMoveDirection -= controller.up * Gravity * Time.deltaTime;
+        planarMoveDirection = Vector3.MoveTowards(planarMoveDirection, LocalMovement() * WalkSpeed, JumpAcceleration * controller.deltaTime);
+        verticalMoveDirection -= controller.up * Gravity * controller.deltaTime;
 
         moveDirection = planarMoveDirection + verticalMoveDirection;
     }
@@ -222,6 +222,6 @@ public class PlayerMachine : SuperStateMachine {
             return;
         }
 
-        moveDirection -= controller.up * Gravity * Time.deltaTime;
+        moveDirection -= controller.up * Gravity * controller.deltaTime;
     }
 }
