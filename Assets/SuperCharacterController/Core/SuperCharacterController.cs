@@ -650,7 +650,7 @@ public class SuperCharacterController : MonoBehaviour
 
                     // We contacted the wall of the ledge, rather than the landing. Raycast down
                     // the wall to retrieve the proper landing
-                    if (Vector3.Angle(nearHit.normal, up) > superColType.StandAngle)
+                    if (Vector3.Angle(nearHit.normal, up) > col.StandAngle)
                     {
                         // Retrieve a vector pointing down the slope
                         Vector3 r = Vector3.Cross(nearHit.normal, down);
@@ -795,18 +795,6 @@ public class SuperCharacterController : MonoBehaviour
         public Vector3 PrimaryNormal()
         {
             return primaryGround.normal;
-        }
-
-        public Vector3 Normal(bool isGrounded, float distance)
-        {
-            Vector3 n;
-            IsGrounded(isGrounded, distance, out n);
-            return n;
-        }
-
-        public float HitDistance()
-        {
-            return primaryGround.distance;
         }
 
         public float Distance()
