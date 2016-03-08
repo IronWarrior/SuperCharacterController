@@ -21,6 +21,9 @@ public class SuperCharacterController : MonoBehaviour
     int fixedUpdatesPerSecond;
 
     [SerializeField]
+    bool clampToMovingGround;
+
+    [SerializeField]
     bool debugSpheres;
 
     [SerializeField]
@@ -201,7 +204,7 @@ public class SuperCharacterController : MonoBehaviour
         bool isClamping = clamping || currentlyClampedTo != null;
         Transform clampedTo = currentlyClampedTo != null ? currentlyClampedTo : currentGround.transform;
 
-        if (isClamping && clampedTo != null && clampedTo.position - lastGroundPosition != Vector3.zero)
+        if (clampToMovingGround && isClamping && clampedTo != null && clampedTo.position - lastGroundPosition != Vector3.zero)
             transform.position += clampedTo.position - lastGroundPosition;
 
         initialPosition = transform.position;
