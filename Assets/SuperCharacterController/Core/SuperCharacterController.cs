@@ -370,7 +370,7 @@ public class SuperCharacterController : MonoBehaviour
 
         collisionData.Clear();
 
-		bool contact = false;
+	bool contact = false;
 					
         foreach (var sphere in spheres)
         {
