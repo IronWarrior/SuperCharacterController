@@ -210,8 +210,8 @@ public class SuperCharacterController : MonoBehaviour
         bool isClamping = clamping || currentlyClampedTo != null;
         Transform clampedTo = currentlyClampedTo != null ? currentlyClampedTo : currentGround.transform;
 
-        if (isClamping && clampedTo != null && clampedTo.position - lastGroundPosition != Vector3.zero)
-            transform.position += clampedTo.position - lastGroundPosition;
+		if (clampToMovingGround && isClamping && clampedTo != null && clampedTo.position - lastGroundPosition != Vector3.zero)
+			transform.position += clampedTo.position - lastGroundPosition;
 
         initialPosition = transform.position;
 
@@ -220,6 +220,8 @@ public class SuperCharacterController : MonoBehaviour
         transform.position += debugMove * deltaTime;
 
         gameObject.SendMessage("SuperUpdate", SendMessageOptions.DontRequireReceiver);
+
+		collisionData.Clear();
 
 		//Calculates the distance the character is trying to move
 		Vector3 vDistance = transform.position - initialPosition;
@@ -360,12 +362,16 @@ public class SuperCharacterController : MonoBehaviour
     /// Check if any of the CollisionSpheres are colliding with any walkable objects in the world.
     /// If they are, apply a proper pushback and retrieve the collision data
     /// </summary>
-    void RecursivePushback(int depth, int maxDepth)
+    bool RecursivePushback(int depth, int maxDepth)
     {
+		bool hasCollided = false;
+
         PushIgnoredColliders();
 
-        bool contact = false;
+        collisionData.Clear();
 
+		bool contact = false;
+					
         foreach (var sphere in spheres)
         {
             foreach (Collider col in Physics.OverlapSphere((SpherePosition(sphere)), radius, Walkable))
@@ -444,7 +450,12 @@ public class SuperCharacterController : MonoBehaviour
                         collisionData.Add(collision);
                     }
                 }
-            }
+
+				//if any of the spheres collidest hasCollided gets set to true
+				if (contact)
+					hasCollided = true;
+			
+			}
         }
 
         PopIgnoredColliders();
@@ -453,6 +464,8 @@ public class SuperCharacterController : MonoBehaviour
         {
             RecursivePushback(depth + 1, maxDepth);
         }
+
+		return hasCollided;
     }
 
     protected struct IgnoredCollider
