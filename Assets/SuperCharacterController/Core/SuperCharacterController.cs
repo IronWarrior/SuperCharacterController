@@ -31,6 +31,9 @@ public class SuperCharacterController : MonoBehaviour
 
     [SerializeField]
     bool debugPushbackMesssages;
+    
+	[SerializeField]
+	bool debugCollisionSteps;
 
     /// <summary>
     /// Describes the Transform of the object we are standing on as well as it's CollisionType, as well
@@ -109,6 +112,7 @@ public class SuperCharacterController : MonoBehaviour
     private const int MaxPushbackIterations = 2;
     private int TemporaryLayerIndex;
     private float fixedDeltaTime;
+    private float hRadius;
 
     private static SuperCollisionType defaultCollisionType;
 
@@ -126,6 +130,8 @@ public class SuperCharacterController : MonoBehaviour
         fixedDeltaTime = 1.0f / fixedUpdatesPerSecond;
 
         heightScale = 1.0f;
+
+        hRadius = radius / 2;
 
         if (ownCollider)
             IgnoreCollider(ownCollider);
@@ -204,7 +210,7 @@ public class SuperCharacterController : MonoBehaviour
         bool isClamping = clamping || currentlyClampedTo != null;
         Transform clampedTo = currentlyClampedTo != null ? currentlyClampedTo : currentGround.transform;
 
-        if (clampToMovingGround && isClamping && clampedTo != null && clampedTo.position - lastGroundPosition != Vector3.zero)
+        if (isClamping && clampedTo != null && clampedTo.position - lastGroundPosition != Vector3.zero)
             transform.position += clampedTo.position - lastGroundPosition;
 
         initialPosition = transform.position;
@@ -215,9 +221,35 @@ public class SuperCharacterController : MonoBehaviour
 
         gameObject.SendMessage("SuperUpdate", SendMessageOptions.DontRequireReceiver);
 
-        collisionData.Clear();
+		//Calculates the distance the character is trying to move
+		Vector3 vDistance = transform.position - initialPosition;
+		float distance = vDistance.magnitude;
 
-        RecursivePushback(0, MaxPushbackIterations);
+		//Calculates the number of the steps to consider during the collision detection relatively to the player radius
+		//If the player moves less than half its radius during a frame, only one step is needed
+		//If the player moves more than that we subdivide the movement of the character in various steps and we test each of them untill a collision is found. 
+
+		int steps = (int)(distance / hRadius) + 1;
+
+		for (int i = 0; i < steps; i++) { 
+			//Calculates the distance to travel at each collision test
+			float testDistance = i * hRadius + distance % hRadius;
+
+			Vector3 testPosition = initialPosition + (vDistance.normalized * testDistance);
+
+			transform.position = testPosition;
+
+			bool hasCollided = RecursivePushback(0, MaxPushbackIterations);
+
+			//If the collision is detected during a step there's no need to keep checking
+			if (hasCollided) {
+				//Debug message
+				if(debugCollisionSteps)
+					Debug.Log ("Collision detected on step " + (i + 1) + " of " + steps );
+				
+				break;
+			}
+		}
 
         ProbeGround(2);
 
