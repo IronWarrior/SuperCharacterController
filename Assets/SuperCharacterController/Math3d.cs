@@ -63,7 +63,7 @@ public class Math3d : MonoBehaviour
     }
 
     //Find the line of intersection between two planes.	The planes are defined by a normal and a point on that plane.
-    //The outputs are a point on the line and a vector which indicates it's direction. If the planes are not parallel, 
+    //The outputs are a point on the line and a vector which indicates it's direction. If the planes are not parallel,
     //the function outputs true, otherwise false.
     public static bool PlanePlaneIntersection(out Vector3 linePoint, out Vector3 lineVec, Vector3 plane1Normal, Vector3 plane1Position, Vector3 plane2Normal, Vector3 plane2Position)
     {
@@ -71,7 +71,7 @@ public class Math3d : MonoBehaviour
         linePoint = Vector3.zero;
         lineVec = Vector3.zero;
 
-        //We can get the direction of the line of intersection of the two planes by calculating the 
+        //We can get the direction of the line of intersection of the two planes by calculating the
         //cross product of the normals of the two planes. Note that this is just a direction and the line
         //is not fixed in space yet. We need a point for that to go with the line vector.
         lineVec = Vector3.Cross(plane1Normal, plane2Normal);
@@ -79,7 +79,7 @@ public class Math3d : MonoBehaviour
         //Next is to calculate a point on the line to fix it's position in space. This is done by finding a vector from
         //the plane2 location, moving parallel to it's plane, and intersecting plane1. To prevent rounding
         //errors, this vector also has to be perpendicular to lineDirection. To get this vector, calculate
-        //the cross product of the normal of plane2 and the lineDirection.		
+        //the cross product of the normal of plane2 and the lineDirection.
         Vector3 ldir = Vector3.Cross(plane2Normal, lineVec);
 
         float denominator = Vector3.Dot(plane1Normal, ldir);
@@ -102,7 +102,7 @@ public class Math3d : MonoBehaviour
         }
     }
 
-    //Get the intersection between a line and a plane. 
+    //Get the intersection between a line and a plane.
     //If the line and plane are not parallel, the function outputs true, otherwise false.
     public static bool LinePlaneIntersection(out Vector3 intersection, Vector3 linePoint, Vector3 lineVec, Vector3 planeNormal, Vector3 planePoint)
     {
@@ -139,7 +139,7 @@ public class Math3d : MonoBehaviour
     }
 
     //Calculate the intersection point of two lines. Returns true if lines intersect, otherwise false.
-    //Note that in 3d, two lines do not intersect most of the time. So if the two lines are not in the 
+    //Note that in 3d, two lines do not intersect most of the time. So if the two lines are not in the
     //same plane, use ClosestPointsOnTwoLines() instead.
     public static bool LineLineIntersection(out Vector3 intersection, Vector3 linePoint1, Vector3 lineVec1, Vector3 linePoint2, Vector3 lineVec2)
     {
@@ -176,7 +176,7 @@ public class Math3d : MonoBehaviour
     }
 
     //Two non-parallel lines which may or may not touch each other have a point on each line which are closest
-    //to each other. This function finds those two points. If the lines are not parallel, the function 
+    //to each other. This function finds those two points. If the lines are not parallel, the function
     //outputs true, otherwise false.
     public static bool ClosestPointsOnTwoLines(out Vector3 closestPointLine1, out Vector3 closestPointLine2, Vector3 linePoint1, Vector3 lineVec1, Vector3 linePoint2, Vector3 lineVec2)
     {
@@ -227,7 +227,7 @@ public class Math3d : MonoBehaviour
     }
 
     //This function returns a point which is a projection from a point to a line segment.
-    //If the projected point lies outside of the line segment, the projected point will 
+    //If the projected point lies outside of the line segment, the projected point will
     //be clamped to the appropriate line edge.
     //If the line is infinite instead of a segment, use ProjectPointOnLine() instead.
     public static Vector3 ProjectPointOnLineSegment(Vector3 linePoint1, Vector3 linePoint2, Vector3 point)
@@ -376,7 +376,7 @@ public class Math3d : MonoBehaviour
         return (float)angle;
     }
 
-    //Convert a plane defined by 3 points to a plane defined by a vector and a point. 
+    //Convert a plane defined by 3 points to a plane defined by a vector and a point.
     //The plane point is the middle of the triangle defined by the 3 points.
     public static void PlaneFrom3Points(out Vector3 planeNormal, out Vector3 planePoint, Vector3 pointA, Vector3 pointB, Vector3 pointC)
     {
@@ -399,9 +399,9 @@ public class Math3d : MonoBehaviour
         Vector3 middleABtoC = pointC - middleAB;
         Vector3 middleACtoB = pointB - middleAC;
 
-        //Calculate the intersection between the two lines. This will be the center 
+        //Calculate the intersection between the two lines. This will be the center
         //of the triangle defined by the 3 points.
-        //We could use LineLineIntersection instead of ClosestPointsOnTwoLines but due to rounding errors 
+        //We could use LineLineIntersection instead of ClosestPointsOnTwoLines but due to rounding errors
         //this sometimes doesn't work.
         Vector3 temp;
         ClosestPointsOnTwoLines(out planePoint, out temp, middleAB, middleABtoC, middleAC, middleACtoB);
@@ -443,7 +443,7 @@ public class Math3d : MonoBehaviour
         return new Vector3(vector4Position.x, vector4Position.y, vector4Position.z);
     }
 
-    //This is an alternative for Quaternion.LookRotation. Instead of aligning the forward and up vector of the game 
+    //This is an alternative for Quaternion.LookRotation. Instead of aligning the forward and up vector of the game
     //object with the input vectors, a custom direction can be used instead of the fixed forward and up vectors.
     //alignWithVector and alignWithNormal are in world space.
     //customForward and customUp are in object space.
@@ -455,7 +455,7 @@ public class Math3d : MonoBehaviour
         //Set the rotation of the destination
         Quaternion rotationA = Quaternion.LookRotation(alignWithVector, alignWithNormal);
 
-        //Set the rotation of the custom normal and up vectors. 
+        //Set the rotation of the custom normal and up vectors.
         //When using the default LookRotation function, this would be hard coded to the forward and up vector.
         Quaternion rotationB = Quaternion.LookRotation(customForward, customUp);
 
@@ -656,7 +656,7 @@ public class Math3d : MonoBehaviour
     }
 
     //Returns true if a line segment (made up of linePoint1 and linePoint2) is fully or partially in a rectangle
-    //made up of RectA to RectD. The line segment is assumed to be on the same plane as the rectangle. If the line is 
+    //made up of RectA to RectD. The line segment is assumed to be on the same plane as the rectangle. If the line is
     //not on the plane, use ProjectPointOnPlane() on linePoint1 and linePoint2 first.
     public static bool IsLineInRectangle(Vector3 linePoint1, Vector3 linePoint2, Vector3 rectA, Vector3 rectB, Vector3 rectC, Vector3 rectD)
     {
@@ -701,7 +701,7 @@ public class Math3d : MonoBehaviour
         }
     }
 
-    //Returns true if "point" is in a rectangle mad up of RectA to RectD. The line point is assumed to be on the same 
+    //Returns true if "point" is in a rectangle mad up of RectA to RectD. The line point is assumed to be on the same
     //plane as the rectangle. If the point is not on the plane, use ProjectPointOnPlane() first.
     public static bool IsPointInRectangle(Vector3 point, Vector3 rectA, Vector3 rectC, Vector3 rectB, Vector3 rectD)
     {
@@ -783,5 +783,108 @@ public class Math3d : MonoBehaviour
 
             return false;
         }
+    }
+
+    /// <summary>
+    /// Determines the closest point between a point and a triangle.
+    ///
+    /// The code in this method is copyrighted by the SlimDX Group under the MIT license:
+    ///
+    /// Copyright (c) 2007-2010 SlimDX Group
+    ///
+    /// Permission is hereby granted, free of charge, to any person obtaining a copy
+    /// of this software and associated documentation files (the "Software"), to deal
+    /// in the Software without restriction, including without limitation the rights
+    /// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    /// copies of the Software, and to permit persons to whom the Software is
+    /// furnished to do so, subject to the following conditions:
+    ///
+    /// The above copyright notice and this permission notice shall be included in
+    /// all copies or substantial portions of the Software.
+    ///
+    /// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    /// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    /// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    /// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    /// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    /// THE SOFTWARE.
+    ///
+    /// </summary>
+    /// <param name="point">The point to test.</param>
+    /// <param name="vertex1">The first vertex to test.</param>
+    /// <param name="vertex2">The second vertex to test.</param>
+    /// <param name="vertex3">The third vertex to test.</param>
+    /// <param name="result">When the method completes, contains the closest point between the two objects.</param>
+    public static void ClosestPointOnTriangleToPoint(ref Vector3 vertex1, ref Vector3 vertex2, ref Vector3 vertex3, ref Vector3 point, out Vector3 result)
+    {
+        //Source: Real-Time Collision Detection by Christer Ericson
+        //Reference: Page 136
+
+        //Check if P in vertex region outside A
+        Vector3 ab = vertex2 - vertex1;
+        Vector3 ac = vertex3 - vertex1;
+        Vector3 ap = point - vertex1;
+
+        float d1 = Vector3.Dot(ab, ap);
+        float d2 = Vector3.Dot(ac, ap);
+        if (d1 <= 0.0f && d2 <= 0.0f)
+        {
+            result = vertex1; //Barycentric coordinates (1,0,0)
+            return;
+        }
+
+        //Check if P in vertex region outside B
+        Vector3 bp = point - vertex2;
+        float d3 = Vector3.Dot(ab, bp);
+        float d4 = Vector3.Dot(ac, bp);
+        if (d3 >= 0.0f && d4 <= d3)
+        {
+            result = vertex2; // barycentric coordinates (0,1,0)
+            return;
+        }
+
+        //Check if P in edge region of AB, if so return projection of P onto AB
+        float vc = d1 * d4 - d3 * d2;
+        if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f)
+        {
+            float v = d1 / (d1 - d3);
+            result = vertex1 + v * ab; //Barycentric coordinates (1-v,v,0)
+            return;
+        }
+
+        //Check if P in vertex region outside C
+        Vector3 cp = point - vertex3;
+        float d5 = Vector3.Dot(ab, cp);
+        float d6 = Vector3.Dot(ac, cp);
+        if (d6 >= 0.0f && d5 <= d6)
+        {
+            result = vertex3; //Barycentric coordinates (0,0,1)
+            return;
+        }
+
+        //Check if P in edge region of AC, if so return projection of P onto AC
+        float vb = d5 * d2 - d1 * d6;
+        if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f)
+        {
+            float w = d2 / (d2 - d6);
+            result = vertex1 + w * ac; //Barycentric coordinates (1-w,0,w)
+            return;
+        }
+
+        //Check if P in edge region of BC, if so return projection of P onto BC
+        float va = d3 * d6 - d5 * d4;
+        if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f)
+        {
+            float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+            result = vertex2 + w * (vertex3 - vertex2); //Barycentric coordinates (0,1-w,w)
+            return;
+        }
+
+        //P inside face region. Compute Q through its barycentric coordinates (u,v,w)
+        float denom = 1.0f / (va + vb + vc);
+        float v2 = vb * denom;
+        float w2 = vc * denom;
+        result = vertex1 + ab * v2 + ac * w2; //= u*vertex1 + v*vertex2 + w*vertex3, u = va * denom = 1.0f - v - w
     }
 }

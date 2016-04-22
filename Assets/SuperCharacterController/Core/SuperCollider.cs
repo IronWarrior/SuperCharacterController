@@ -2,6 +2,7 @@
 using System.Collections;
 
 public static class SuperCollider {
+    private const float resolution = 0.05f;
 
     public static Vector3 ClosestPointOnSurface(Collider collider, Vector3 to, float radius)
     {
@@ -16,6 +17,10 @@ public static class SuperCollider {
         else if (collider is CapsuleCollider)
         {
             return SuperCollider.ClosestPointOnSurface((CapsuleCollider)collider, to);
+        }
+        else if (collider is TerrainCollider)
+        {
+            return SuperCollider.ClosestPointOnTerrainSurface((TerrainCollider)collider, to, radius);
         }
         else if (collider is MeshCollider)
         {
@@ -46,6 +51,62 @@ public static class SuperCollider {
         }
 
         return Vector3.zero;
+    }
+
+    public static Vector3 ClosestPointOnTerrainSurface(TerrainCollider collider, Vector3 to, float radius)
+    {
+        float[,] values = new float[(int)(radius * 2 / resolution), (int)(radius * 2 / resolution)];
+        Terrain terrain = collider.GetComponent<Terrain>();
+
+        for (float x = to.x - radius, i = 0; x <= to.x + radius && i < values.GetLength(0); x += resolution, i++)
+        {
+            for (float z = to.z - radius, j = 0; z <= to.z + radius && j < values.GetLength(0); z += resolution, j++)
+            {
+                values[(int)i, (int)j] = terrain.SampleHeight(new Vector3(x, to.y, z));
+            }
+        }
+
+        Vector3 a = Vector3.zero;
+        Vector3 b = Vector3.zero;
+        Vector3 c = Vector3.zero;
+
+        Vector3 shortest = to + Vector3.up * radius * 2;
+
+        for (int i = 0; i < values.GetLength(0); i++)
+        {
+            for (int j = 1; j < values.GetLength(0); j++)
+            {
+                a.x = to.x - radius + i * resolution;
+                a.y = values[i, j - 1];
+                a.z = to.z - radius + (j - 1) * resolution;
+
+                b.x = to.x - radius + i * resolution;
+                b.y = values[i, j];
+                b.z = to.z - radius + j * resolution;
+
+                if (i % 2 == 0)
+                {
+                    c.x = to.x - radius + (i + 1) * resolution;
+                    c.y = values[i, j - 1];
+                    c.z = to.z - radius + (j - 1) * resolution;
+                }
+                else
+                {
+                    c.x = to.x - radius + (i - 1) * resolution;
+                    c.y = values[i, j];
+                    c.z = to.z - radius + j * resolution;
+                }
+                Vector3 newShortest;
+                Math3d.ClosestPointOnTriangleToPoint(ref a, ref b, ref c, ref to, out newShortest);
+
+                if ((to - newShortest).magnitude < (to - shortest).magnitude)
+                {
+                    shortest = newShortest;
+                }
+            }
+        }
+
+        return shortest;
     }
 
     public static Vector3 ClosestPointOnSurface(SphereCollider collider, Vector3 to)
@@ -126,7 +187,7 @@ public static class SuperCollider {
 
         if (local.y < lineLength * 0.5f && local.y > -lineLength * 0.5f) // Controller is contacting with cylinder, not spheres
             pt = dir * local.y + collider.center;
-        else if (local.y > lineLength * 0.5f) // Controller is contacting with the upper sphere 
+        else if (local.y > lineLength * 0.5f) // Controller is contacting with the upper sphere
             pt = upperSphere;
         else if (local.y < -lineLength * 0.5f) // Controller is contacting with lower sphere
             pt = lowerSphere;
