@@ -52,11 +52,11 @@ public static class SuperCollider {
     {
         Vector3 p;
 
-        p = to - collider.transform.position;
+        p = to - (collider.transform.position + collider.center);
         p.Normalize();
 
         p *= collider.radius * collider.transform.localScale.x;
-        p += collider.transform.position;
+        p += collider.transform.position + collider.center;
 
         return p;
     }
