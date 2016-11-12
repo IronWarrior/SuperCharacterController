@@ -45,6 +45,8 @@ public static class SuperCollider {
             return SuperCollider.ClosestPointOnSurface((TerrainCollider)collider, to, radius, false);
         }
 
+        Debug.LogError(string.Format("{0} does not have an implementation for ClosestPointOnSurface", collider.GetType()));
+
         return Vector3.zero;
     }
 

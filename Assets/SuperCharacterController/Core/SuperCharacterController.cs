@@ -15,6 +15,9 @@ public class SuperCharacterController : MonoBehaviour
     Vector3 debugMove = Vector3.zero;
 
     [SerializeField]
+    QueryTriggerInteraction triggerInteraction;
+
+    [SerializeField]
     bool fixedTimeStep;
 
     [SerializeField]
@@ -148,7 +151,7 @@ public class SuperCharacterController : MonoBehaviour
         if (defaultCollisionType == null)
             defaultCollisionType = new GameObject("DefaultSuperCollisionType", typeof(SuperCollisionType)).GetComponent<SuperCollisionType>();
 
-        currentGround = new SuperGround(Walkable, this);
+        currentGround = new SuperGround(Walkable, this, triggerInteraction);
 
         manualUpdateOnly = false;
 
@@ -278,7 +281,7 @@ public class SuperCharacterController : MonoBehaviour
             RaycastHit hit;
 
             // Check if our path to our resolved position is blocked by any colliders
-            if (Physics.CapsuleCast(SpherePosition(feet), SpherePosition(head), radius, direction.normalized, out hit, direction.magnitude, Walkable))
+            if (Physics.CapsuleCast(SpherePosition(feet), SpherePosition(head), radius, direction.normalized, out hit, direction.magnitude, Walkable, triggerInteraction))
             {
                 transform.position += v.normalized * hit.distance;
             }
@@ -336,83 +339,77 @@ public class SuperCharacterController : MonoBehaviour
 
         foreach (var sphere in spheres)
         {
-            foreach (Collider col in Physics.OverlapSphere((SpherePosition(sphere)), radius, Walkable))
+            foreach (Collider col in Physics.OverlapSphere((SpherePosition(sphere)), radius, Walkable, triggerInteraction))
             {
-                if (col.isTrigger)
-                    continue;
-
                 Vector3 position = SpherePosition(sphere);
                 Vector3 contactPoint = SuperCollider.ClosestPointOnSurface(col, position, radius);
 
-                if (contactPoint != Vector3.zero)
+                if (debugPushbackMesssages)
+                    DebugDraw.DrawMarker(contactPoint, 2.0f, Color.cyan, 0.0f, false);
+
+                Vector3 v = contactPoint - position;
+
+                if (v != Vector3.zero)
                 {
-                    if (debugPushbackMesssages)
-                        DebugDraw.DrawMarker(contactPoint, 2.0f, Color.cyan, 0.0f, false);
+                    // Cache the collider's layer so that we can cast against it
+                    int layer = col.gameObject.layer;
 
-                    Vector3 v = contactPoint - position;
+                    col.gameObject.layer = TemporaryLayerIndex;
 
-                    if (v != Vector3.zero)
+                    // Check which side of the normal we are on
+                    bool facingNormal = Physics.SphereCast(new Ray(position, v.normalized), TinyTolerance, v.magnitude + TinyTolerance, 1 << TemporaryLayerIndex);
+
+                    col.gameObject.layer = layer;
+
+                    // Orient and scale our vector based on which side of the normal we are situated
+                    if (facingNormal)
                     {
-                        // Cache the collider's layer so that we can cast against it
-                        int layer = col.gameObject.layer;
-
-                        col.gameObject.layer = TemporaryLayerIndex;
-
-                        // Check which side of the normal we are on
-                        bool facingNormal = Physics.SphereCast(new Ray(position, v.normalized), TinyTolerance, v.magnitude + TinyTolerance, 1 << TemporaryLayerIndex);
-
-                        col.gameObject.layer = layer;
-
-                        // Orient and scale our vector based on which side of the normal we are situated
-                        if (facingNormal)
+                        if (Vector3.Distance(position, contactPoint) < radius)
                         {
-                            if (Vector3.Distance(position, contactPoint) < radius)
-                            {
-                                v = v.normalized * (radius - v.magnitude) * -1;
-                            }
-                            else
-                            {
-                                // A previously resolved collision has had a side effect that moved us outside this collider
-                                continue;
-                            }
+                            v = v.normalized * (radius - v.magnitude) * -1;
                         }
                         else
                         {
-                            v = v.normalized * (radius + v.magnitude);
+                            // A previously resolved collision has had a side effect that moved us outside this collider
+                            continue;
                         }
-
-                        contact = true;
-
-                        transform.position += v;
-
-                        col.gameObject.layer = TemporaryLayerIndex;
-
-                        // Retrieve the surface normal of the collided point
-                        RaycastHit normalHit;
-
-                        Physics.SphereCast(new Ray(position + v, contactPoint - (position + v)), TinyTolerance, out normalHit, 1 << TemporaryLayerIndex);
-
-                        col.gameObject.layer = layer;
-
-                        SuperCollisionType superColType = col.gameObject.GetComponent<SuperCollisionType>();
-
-                        if (superColType == null)
-                            superColType = defaultCollisionType;
-
-                        // Our collision affected the collider; add it to the collision data
-                        var collision = new SuperCollision()
-                        {
-                            collisionSphere = sphere,
-                            superCollisionType = superColType,
-                            gameObject = col.gameObject,
-                            point = contactPoint,
-                            normal = normalHit.normal
-                        };
-
-                        collisionData.Add(collision);
                     }
+                    else
+                    {
+                        v = v.normalized * (radius + v.magnitude);
+                    }
+
+                    contact = true;
+
+                    transform.position += v;
+
+                    col.gameObject.layer = TemporaryLayerIndex;
+
+                    // Retrieve the surface normal of the collided point
+                    RaycastHit normalHit;
+
+                    Physics.SphereCast(new Ray(position + v, contactPoint - (position + v)), TinyTolerance, out normalHit, 1 << TemporaryLayerIndex);
+
+                    col.gameObject.layer = layer;
+
+                    SuperCollisionType superColType = col.gameObject.GetComponent<SuperCollisionType>();
+
+                    if (superColType == null)
+                        superColType = defaultCollisionType;
+
+                    // Our collision affected the collider; add it to the collision data
+                    var collision = new SuperCollision()
+                    {
+                        collisionSphere = sphere,
+                        superCollisionType = superColType,
+                        gameObject = col.gameObject,
+                        point = contactPoint,
+                        normal = normalHit.normal
+                    };
+
+                    collisionData.Add(collision);
                 }
-            }
+            }            
         }
 
         PopIgnoredColliders();
@@ -512,10 +509,11 @@ public class SuperCharacterController : MonoBehaviour
 
     public class SuperGround
     {
-        public SuperGround(LayerMask walkable, SuperCharacterController controller)
+        public SuperGround(LayerMask walkable, SuperCharacterController controller, QueryTriggerInteraction triggerInteraction)
         {
             this.walkable = walkable;
             this.controller = controller;
+            this.triggerInteraction = triggerInteraction;
         }
 
         private class GroundHit
@@ -534,6 +532,7 @@ public class SuperCharacterController : MonoBehaviour
 
         private LayerMask walkable;
         private SuperCharacterController controller;
+        private QueryTriggerInteraction triggerInteraction;
 
         private GroundHit primaryGround;
         private GroundHit nearGround;
@@ -568,7 +567,7 @@ public class SuperCharacterController : MonoBehaviour
 
             RaycastHit hit;
 
-            if (Physics.SphereCast(o, smallerRadius, down, out hit, Mathf.Infinity, walkable))
+            if (Physics.SphereCast(o, smallerRadius, down, out hit, Mathf.Infinity, walkable, triggerInteraction))
             {
                 var superColType = hit.collider.gameObject.GetComponent<SuperCollisionType>();
 
@@ -606,8 +605,8 @@ public class SuperCharacterController : MonoBehaviour
                 RaycastHit nearHit;
                 RaycastHit farHit;
 
-                Physics.Raycast(nearPoint, down, out nearHit, Mathf.Infinity, walkable);
-                Physics.Raycast(farPoint, down, out farHit, Mathf.Infinity, walkable);
+                Physics.Raycast(nearPoint, down, out nearHit, Mathf.Infinity, walkable, triggerInteraction);
+                Physics.Raycast(farPoint, down, out farHit, Mathf.Infinity, walkable, triggerInteraction);
 
                 nearGround = new GroundHit(nearHit.point, nearHit.normal, nearHit.distance);
                 farGround = new GroundHit(farHit.point, farHit.normal, farHit.distance);
@@ -624,7 +623,7 @@ public class SuperCharacterController : MonoBehaviour
 
                     RaycastHit flushHit;
 
-                    if (Physics.Raycast(flushOrigin, v, out flushHit, Mathf.Infinity, walkable))
+                    if (Physics.Raycast(flushOrigin, v, out flushHit, Mathf.Infinity, walkable, triggerInteraction))
                     {
                         RaycastHit sphereCastHit;
 
@@ -661,7 +660,7 @@ public class SuperCharacterController : MonoBehaviour
 
                         RaycastHit stepHit;
 
-                        if (Physics.Raycast(nearPoint, v, out stepHit, Mathf.Infinity, walkable))
+                        if (Physics.Raycast(nearPoint, v, out stepHit, Mathf.Infinity, walkable, triggerInteraction))
                         {
                             stepGround = new GroundHit(stepHit.point, stepHit.normal, stepHit.distance);
                         }
@@ -674,7 +673,7 @@ public class SuperCharacterController : MonoBehaviour
             }
             // If the initial SphereCast fails, likely due to the controller clipping a wall,
             // fallback to a raycast simulated to SphereCast data
-            else if (Physics.Raycast(o, down, out hit, Mathf.Infinity, walkable))
+            else if (Physics.Raycast(o, down, out hit, Mathf.Infinity, walkable, triggerInteraction))
             {
                 var superColType = hit.collider.gameObject.GetComponent<SuperCollisionType>();
 
@@ -858,11 +857,11 @@ public class SuperCharacterController : MonoBehaviour
 
                 secondaryOrigin += Math3d.ProjectVectorOnPlane(controller.up, v2).normalized * horizontal + controller.up * vertical;
             }
-
-            if (Physics.SphereCast(secondaryOrigin, TinyTolerance, controller.down, out hit, Mathf.Infinity, walkable))
+            
+            if (Physics.Raycast(secondaryOrigin, controller.down, out hit, Mathf.Infinity, walkable, triggerInteraction))
             {
                 // Remove the tolerance from the distance travelled
-                hit.distance -= Tolerance;
+                hit.distance -= Tolerance + TinyTolerance;
 
                 return true;
             }
