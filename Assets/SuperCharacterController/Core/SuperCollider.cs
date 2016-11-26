@@ -44,12 +44,10 @@ public static class SuperCollider {
         {
             return SuperCollider.ClosestPointOnSurface((TerrainCollider)collider, to, radius, false);
         }
-
-        Debug.LogError(string.Format("{0} does not have an implementation for ClosestPointOnSurface", collider.GetType()));
-
-        return Vector3.zero;
+                
+        throw new ClosestPointOnSurfaceNotImplementedException(collider);
     }
-
+    
     public static Vector3 ClosestPointOnSurface(SphereCollider collider, Vector3 to)
     {
         Vector3 p;
@@ -268,4 +266,22 @@ public static class SuperCollider {
 
         return collider.transform.TransformPoint(shortestPoint);
     }
+
+    public class SuperColliderException : System.Exception
+    {
+        public SuperColliderException(string message) : base(message) { }
+    }
+
+    public class ClosestPointOnSurfaceNotImplementedException : SuperColliderException
+    {
+        Collider Collider;
+        public ClosestPointOnSurfaceNotImplementedException(Collider collider) : base(HumanReadable(collider)) {
+            Collider = collider;
+        }
+        private static string HumanReadable(Collider collider)
+        {
+            return string.Format("{0} does not have an implementation for ClosestPointOnSurface; GameObject.Name='{1}'", collider.GetType(), collider.gameObject.name);
+        }
+    }
+
 }

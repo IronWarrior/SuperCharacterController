@@ -342,13 +342,22 @@ public class SuperCharacterController : MonoBehaviour
             foreach (Collider col in Physics.OverlapSphere((SpherePosition(sphere)), radius, Walkable, triggerInteraction))
             {
                 Vector3 position = SpherePosition(sphere);
-                Vector3 contactPoint = SuperCollider.ClosestPointOnSurface(col, position, radius);
+                Vector3 contactPoint = Vector3.zero;
 
+                try
+                {
+                    contactPoint = SuperCollider.ClosestPointOnSurface(col, position, radius);
+                }
+                catch (SuperCollider.ClosestPointOnSurfaceNotImplementedException ex)
+                {
+                    Debug.Log(ex.Message);
+                    return;
+                }
+                 
                 if (debugPushbackMesssages)
                     DebugDraw.DrawMarker(contactPoint, 2.0f, Color.cyan, 0.0f, false);
 
                 Vector3 v = contactPoint - position;
-
                 if (v != Vector3.zero)
                 {
                     // Cache the collider's layer so that we can cast against it
