@@ -3,19 +3,22 @@ using System.Collections;
 
 public static class SuperCollider {
 
-    public static Vector3 ClosestPointOnSurface(Collider collider, Vector3 to, float radius)
+    public static bool ClosestPointOnSurface(Collider collider, Vector3 to, float radius, out Vector3 closestPointOnSurface)
     {
         if (collider is BoxCollider)
         {
-            return SuperCollider.ClosestPointOnSurface((BoxCollider)collider, to);
+            closestPointOnSurface = SuperCollider.ClosestPointOnSurface((BoxCollider)collider, to);
+            return true;
         }
         else if (collider is SphereCollider)
         {
-            return SuperCollider.ClosestPointOnSurface((SphereCollider)collider, to);
+            closestPointOnSurface = SuperCollider.ClosestPointOnSurface((SphereCollider)collider, to);
+            return true;
         }
         else if (collider is CapsuleCollider)
         {
-            return SuperCollider.ClosestPointOnSurface((CapsuleCollider)collider, to);
+            closestPointOnSurface = SuperCollider.ClosestPointOnSurface((CapsuleCollider)collider, to);
+            return true;
         }
         else if (collider is MeshCollider)
         {
@@ -23,29 +26,35 @@ public static class SuperCollider {
 
             if (rpgMesh != null)
             {
-                return rpgMesh.ClosestPointOn(to, radius, false, false);
+                closestPointOnSurface = rpgMesh.ClosestPointOn(to, radius, false, false);
+                return true;
             }
 
             BSPTree bsp = collider.GetComponent<BSPTree>();
 
             if (bsp != null)
             {
-                return bsp.ClosestPointOn(to, radius);
+                closestPointOnSurface = bsp.ClosestPointOn(to, radius);
+                return true;
             }
 
             BruteForceMesh bfm = collider.GetComponent<BruteForceMesh>();
 
             if (bfm != null)
             {
-                return bfm.ClosestPointOn(to);
+                closestPointOnSurface = bfm.ClosestPointOn(to);
+                return true;
             }
         }
         else if (collider is TerrainCollider)
         {
-            return SuperCollider.ClosestPointOnSurface((TerrainCollider)collider, to, radius, false);
+            closestPointOnSurface = SuperCollider.ClosestPointOnSurface((TerrainCollider)collider, to, radius, false);
+            return true;
         }
-                
-        throw new ClosestPointOnSurfaceNotImplementedException(collider);
+
+        Debug.LogError(string.Format("{0} does not have an implementation for ClosestPointOnSurface; GameObject.Name='{1}'", collider.GetType(), collider.gameObject.name));
+        closestPointOnSurface = Vector3.zero;
+        return false;
     }
     
     public static Vector3 ClosestPointOnSurface(SphereCollider collider, Vector3 to)
@@ -265,23 +274,6 @@ public static class SuperCollider {
         }
 
         return collider.transform.TransformPoint(shortestPoint);
-    }
-
-    public class SuperColliderException : System.Exception
-    {
-        public SuperColliderException(string message) : base(message) { }
-    }
-
-    public class ClosestPointOnSurfaceNotImplementedException : SuperColliderException
-    {
-        Collider Collider;
-        public ClosestPointOnSurfaceNotImplementedException(Collider collider) : base(HumanReadable(collider)) {
-            Collider = collider;
-        }
-        private static string HumanReadable(Collider collider)
-        {
-            return string.Format("{0} does not have an implementation for ClosestPointOnSurface; GameObject.Name='{1}'", collider.GetType(), collider.gameObject.name);
-        }
     }
 
 }
