@@ -218,7 +218,10 @@ public class CustomController : MonoBehaviour
 				{
 					isPushedBack = true;
 					Vector3 position = SpherePosition(collisionSpheres[i]); // The position of the sphere in world coordinates
-					Vector3 contactPoint = SuperCollider.ClosestPointOnSurface(overlappingColliders[j], position, radius); // The closest point on the collider, named contact point
+					Vector3 contactPoint;
+
+					SuperCollider.ClosestPointOnSurface(overlappingColliders[j], position, radius, out contactPoint); // The closest point on the collider, named contact point
+
 					if (contactPoint != Vector3.zero) // Contact point was found
 					{
 						Vector3 v = contactPoint - position; //The direction from the position of the sphere to the contact point
