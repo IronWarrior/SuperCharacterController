@@ -648,8 +648,13 @@ public class SuperCharacterController : MonoBehaviour
                 // it is connected to at it's base, if there exists any
                 if (Vector3.Angle(nearHit.normal, up) > superColType.StandAngle || nearHit.distance > Tolerance)
                 {
-                    var col = nearHit.collider.gameObject.GetComponent<SuperCollisionType>();
-
+                    SuperCollisionType col = null;
+                
+                    if (nearhit.collider != null)
+                    {
+                        col = nearHit.collider.gameObject.GetComponent<SuperCollisionType>();
+                    }
+                    
                     if (col == null)
                     {
                         col = defaultCollisionType;
