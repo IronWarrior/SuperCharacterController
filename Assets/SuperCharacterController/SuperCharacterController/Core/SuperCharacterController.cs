@@ -650,7 +650,7 @@ public class SuperCharacterController : MonoBehaviour
                 {
                     SuperCollisionType col = null;
                 
-                    if (nearhit.collider != null)
+                    if (nearHit.collider != null)
                     {
                         col = nearHit.collider.gameObject.GetComponent<SuperCollisionType>();
                     }
